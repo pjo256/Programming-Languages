@@ -1,0 +1,26 @@
+To compile this Ada program, run gnatmake main.adb. 
+
+The resulting executable takes in input through I/O redirection. To run a test case, write
+
+./main < input_file (or main if . is in your PATH variable)
+
+Read in 30 numbers into an array. Each number is an integer between 0 and 1000.
+There are three tasks, printer, sorter and adder, that run in parallel. These tasks perform the following actions:
+
+Printer:
+First print out the elements of the array.
+Notify sorter that the numbers have been printed.
+Wait for notification from sorter that it is finished.
+Print out the elements of the array again.
+Wait to receive a value from adder
+Print the value received from adder
+
+Adder:
+Wait for notification that sorter is finished.
+Compute the sum of the elements of the sorted array.
+Send the result to printer.
+
+Sorter:
+Wait for notification that printer has printed the elements of the array.
+Sort the array according to the parallel quicksort algorithm.
+Notify both printer and adder that the array is sorted.
