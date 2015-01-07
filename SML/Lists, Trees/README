@@ -1,0 +1,4 @@
+Purely functional code consisting of types and functions for computing on lists and trees written in ML.
+
+To run, open an SML interpreter, import defintions, and call some functions.
+

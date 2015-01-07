@@ -1,0 +1,4 @@
+Demonstrating some Scala generics, traits, case classes, and pattern matching.
+
+scalac ODemo.scala
+scala ODemo
