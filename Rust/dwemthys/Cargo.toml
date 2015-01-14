@@ -1,0 +1,10 @@
+[package]
+
+name = "dwemthys"
+version = "0.0.1"
+authors = ["phiott"]
+build = "sh .build.sh"
+
+[dependencies.tcod]
+
+git = "https://github.com/tomassedovic/tcod-rs.git"

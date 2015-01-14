@@ -1,0 +1,38 @@
+Grab libtcod
+
+hg clone https://bitbucket.org/jice/libtcod
+cd libtcod
+hg checkout 1.5.1 	//tcod-rs tested on libtcod 1.5.1
+make -f makefiles/makefile-linux64 clean all
+
+
+cd path/dwemthys
+cargo build
+cargo run
+
+
+---
+
+If this happens:
+
+Running `target/dwemthys`
+target/dwemthys: error while loading shared libraries: libtcod.so.1: cannot open shared object file: No such file or directory
+An unknown error occurred
+
+To learn more, run the command again with --verbose.
+
+Directories for dynamic libraries can be found by running:
+
+cat /etc/ld.so.conf.d/*.conf
+
+Should give you a list of locations. 
+
+cd into the parent directory /usr/lib, and scroll down to find libraries. You should be able to find libtcod.so in this dir, but Cargo is complaining about libtcod.so.1
+
+Make a symbolic link in this dir to the libtcod.so from your libtcod dir. 
+
+Head back to our game, and the problem should be fixed.
+
+
+
+
