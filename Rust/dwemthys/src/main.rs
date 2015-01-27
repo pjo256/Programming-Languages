@@ -3,6 +3,11 @@ use tcod::{Console, BackgroundFlag, KeyCode};
 use tcod::Key::Special as Special;
 use std::rand::{thread_rng, Rng};
 
+struct Game {
+    exit : bool,
+    window_bounds : Bounds
+}
+
 struct Point {
     x : i32,
     y : i32
@@ -51,15 +56,95 @@ struct Character {
     display_char : char
 }
 
+impl Character {
+    fn new(x : i32, y: i32, dc: char) -> Character {
+        Character { position: Point { x : x, y : y}, display_char: dc }
+    }
+}
 
-fn render(con: &mut Console, pc : &Character, mobs: &Vec<Character>) {
+struct NPC {
+    position : Point,
+    display_char : char
+}
+
+impl NPC {
+    fn new(x : i32, y: i32, dc: char) -> NPC {
+        NPC { position: Point { x : x, y : y }, display_char: dc }
+    }
+}
+
+trait Update {
+    fn update(&mut self, tcod::KeyState, &mut Game);
+    fn render(&self, &mut Console);
+}
+
+impl Update for Character {
+    fn update(&mut self, keypress: tcod::KeyState, game: &mut Game) {
+        let mut offset = Point { x : 0, y : 0 };
+        match keypress.key {
+            Special(KeyCode::Escape) => game.exit = true,
+            Special(KeyCode::Up) => {
+                offset.y = -1;
+            },
+            Special(KeyCode::Down) => {
+                offset.y = 1;
+            },
+            Special(KeyCode::Left) => {
+                offset.x = -1;
+            },
+            Special(KeyCode::Right) => {
+                offset.x = 1;
+            },
+            _ => {}
+        }
+
+        match game.window_bounds.contains(self.position.translate(&offset)) {
+            Contains::DoesContain => self.position = self.position.translate(&offset),
+            Contains::DoesNotContain => wrap(&mut self.position, &game.window_bounds, &offset)
+        }
+    }
+
+    fn render(&self, console: &mut Console) {
+        console.put_char(self.position.x, self.position.y, self.display_char, 
+                         BackgroundFlag::Set);
+    }
+}
+
+impl Update for NPC {
+    fn update(&mut self, keypress: tcod::KeyState, game: &mut Game) {
+        let offset_x = (thread_rng().gen_range(0.0f32, 3.0) - 1.0) as i32;
+        match game.window_bounds.contains(self.position.translate_x(offset_x)) {
+            Contains::DoesContain => self.position = self.position.translate_x(offset_x),
+            Contains::DoesNotContain => wrap(&mut self.position, &game.window_bounds, &Point { x : offset_x, y : 0})
+        }
+
+        let offset_y = (thread_rng().gen_range(0.0f32, 3.0) - 1.0) as i32;
+        match game.window_bounds.contains(self.position.translate_y(offset_y)) {
+            Contains::DoesContain => self.position = self.position.translate_y(offset_y),
+            Contains::DoesNotContain => wrap(&mut self.position, &game.window_bounds, &Point { x : 0, y : offset_y})
+        }
+    }
+
+    fn render(&self, console: &mut Console) {
+        console.put_char(self.position.x, self.position.y, self.display_char, 
+                         BackgroundFlag::Set);
+    }
+}
+
+
+fn render(con: &mut Console, objs: &Vec<Box<Update>>) {
     con.clear();
-    con.put_char(pc.position.x, pc.position.y, pc.display_char, BackgroundFlag::Set);
-    for mob in mobs.iter() {
-        con.put_char(mob.position.x, mob.position.y, mob.display_char, BackgroundFlag::Set);
+    for obj in objs.iter() {
+        obj.render(con);
     }
 
     Console::flush();
+}
+
+fn update(objs: &mut Vec<Box<Update>>, keypress: tcod::KeyState, game: &mut Game) {
+    for obj in objs.iter_mut() {  
+        obj.update(keypress, game);
+    }
 }
 
 fn wrap(p : &mut Point, window_bounds : &Bounds, offset : &Point) {
@@ -79,57 +164,20 @@ fn wrap(p : &mut Point, window_bounds : &Bounds, offset : &Point) {
 fn main() { 
     let window_bounds : Bounds = Bounds { min : Point { x: 0, y: 0}, max : Point { x: 80, y : 50 } };
     let mut con = Console::init_root(window_bounds.max.x, window_bounds.max.y, "libtcod Rust tutorial", false);
-    let mut exit = false;
-    let mut pc : Character = Character { position : Point { x : 40i32, y : 25i32}, 
-                                         display_char : '@' };
-    let mut mobs = Vec::new();
-    mobs.push(Character { position : Point { x : 10i32, y : 10i32 }, display_char : '%' });
+    let mut game : Game = Game { exit : false, window_bounds : window_bounds };
+    let pc = Box::new(Character::new(40i32, 25i32, '@')) as Box<Update>;
+    let mob = Box::new(NPC::new(10i32, 10i32, '%')) as Box<Update>;
+    let mut objs: Vec<Box<Update>> = vec![pc, mob];
     
 
-    render(&mut con, &pc, &mobs);
-    while !(Console::window_closed() || exit) {
+    render(&mut con, &objs);
+    while !(Console::window_closed() || game.exit) {
         
         let keypress = Console::wait_for_keypress(true);
 
-        let mut offset = Point { x : 0, y : 0 };
-        match keypress.key {
-            Special(KeyCode::Escape) => exit = true,
-            Special(KeyCode::Up) => {
-                offset.y = -1;
-            },
-            Special(KeyCode::Down) => {
-                offset.y = 1;
-            },
-            Special(KeyCode::Left) => {
-                offset.x = -1;
-            },
-            Special(KeyCode::Right) => {
-                offset.x = 1;
-            },
-            _ => {}
-        }
+        update(&mut objs, keypress, &mut game);
 
-        match window_bounds.contains(pc.position.translate(&offset)) {
-            Contains::DoesContain => pc.position = pc.position.translate(&offset),
-            Contains::DoesNotContain => wrap(&mut pc.position, &window_bounds, &offset)
-        }
-
-        for mob in mobs.iter_mut() {
-            let ref mut mob_pos = mob.position;
-            let offset_x = (thread_rng().gen_range(0.0f32, 3.0) - 1.0) as i32;
-            match window_bounds.contains(mob_pos.translate_x(offset_x)) {
-                Contains::DoesContain => mob_pos.x = mob_pos.translate_x(offset_x).x,
-                Contains::DoesNotContain => wrap(mob_pos, &window_bounds, &Point { x : offset_x, y : 0})
-            }
-
-            let offset_y = (thread_rng().gen_range(0.0f32, 3.0) - 1.0) as i32;
-            match window_bounds.contains(mob_pos.translate_y(offset_y)) {
-                Contains::DoesContain => mob_pos.y = mob_pos.translate_y(offset_y).y,
-                Contains::DoesNotContain => wrap(mob_pos, &window_bounds, &Point { x : 0, y : offset_y})
-            }
-        }
-
-        render(&mut con, &pc, &mobs);
+        render(&mut con, &objs);
     } 
 }
 
