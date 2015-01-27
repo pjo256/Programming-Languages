@@ -1,3 +1,7 @@
+A rougelike based on http://jaredonline.svbtle.com/roguelike-tutorial-in-rust-part-1
+
+
+
 Grab libtcod
 
 hg clone https://bitbucket.org/jice/libtcod
