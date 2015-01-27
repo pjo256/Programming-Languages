@@ -46,41 +46,44 @@ impl Bounds {
     }
 }
 
+struct Character {
+    position : Point,
+    display_char : char
+}
 
-fn render(con: &mut Console, pc : &Point, mobs: &Vec<Point>) {
+
+fn render(con: &mut Console, pc : &Character, mobs: &Vec<Character>) {
     con.clear();
-    con.put_char(pc.x, pc.y, '@', BackgroundFlag::Set);
+    con.put_char(pc.position.x, pc.position.y, pc.display_char, BackgroundFlag::Set);
     for mob in mobs.iter() {
-        con.put_char(mob.x, mob.y, '%', BackgroundFlag::Set);
+        con.put_char(mob.position.x, mob.position.y, mob.display_char, BackgroundFlag::Set);
     }
 
     Console::flush();
 }
 
-fn wrap(p : &Point, window_bounds : &Bounds, offset : &Point) -> Point {
-    let mut pnpc = *p;
+fn wrap(p : &mut Point, window_bounds : &Bounds, offset : &Point) {
     if offset.x > 0 {
-        pnpc.x = (pnpc.x + offset.x) % window_bounds.max.x;
+        p.x = (p.x + offset.x) % window_bounds.max.x;
     } else if offset.x < 0 {
-       pnpc.x = { if pnpc.x > 0 { pnpc.x + offset.x } else { window_bounds.max.x } };
+       p.x = { if p.x > 0 { p.x + offset.x } else { window_bounds.max.x } };
     }
 
     if offset.y > 0 {
-        pnpc.y = (pnpc.y + offset.y) % window_bounds.max.y;
+        p.y = (p.y + offset.y) % window_bounds.max.y;
     } else if offset.y < 0 {
-        pnpc.y = { if pnpc.y > 0 { pnpc.y + offset.y } else { window_bounds.max.y } };
+        p.y = { if p.y > 0 { p.y + offset.y } else { window_bounds.max.y } };
     }
-
-    return pnpc;
 }
 
 fn main() { 
     let window_bounds : Bounds = Bounds { min : Point { x: 0, y: 0}, max : Point { x: 80, y : 50 } };
     let mut con = Console::init_root(window_bounds.max.x, window_bounds.max.y, "libtcod Rust tutorial", false);
     let mut exit = false;
-    let mut pc : Point = Point { x : 40i32, y : 25i32};
+    let mut pc : Character = Character { position : Point { x : 40i32, y : 25i32}, 
+                                         display_char : '@' };
     let mut mobs = Vec::new();
-    mobs.push(Point { x : 10i32, y : 10i32 });
+    mobs.push(Character { position : Point { x : 10i32, y : 10i32 }, display_char : '%' });
     
 
     render(&mut con, &pc, &mobs);
@@ -106,23 +109,23 @@ fn main() {
             _ => {}
         }
 
-        match window_bounds.contains(pc.translate(&offset)) {
-            Contains::DoesContain => pc = pc.translate(&offset),
-            Contains::DoesNotContain => pc = wrap(&pc, &window_bounds, &offset)
+        match window_bounds.contains(pc.position.translate(&offset)) {
+            Contains::DoesContain => pc.position = pc.position.translate(&offset),
+            Contains::DoesNotContain => wrap(&mut pc.position, &window_bounds, &offset)
         }
 
         for mob in mobs.iter_mut() {
+            let ref mut mob_pos = mob.position;
             let offset_x = (thread_rng().gen_range(0.0f32, 3.0) - 1.0) as i32;
-            let mut mob_pos = *mob;
             match window_bounds.contains(mob_pos.translate_x(offset_x)) {
-                Contains::DoesContain => mob_pos = mob_pos.translate_x(offset_x),
-                Contains::DoesNotContain => mob_pos = wrap(&mob_pos, &window_bounds, &Point { x : offset_x, y : 0})
+                Contains::DoesContain => mob_pos.x = mob_pos.translate_x(offset_x).x,
+                Contains::DoesNotContain => wrap(mob_pos, &window_bounds, &Point { x : offset_x, y : 0})
             }
 
             let offset_y = (thread_rng().gen_range(0.0f32, 3.0) - 1.0) as i32;
             match window_bounds.contains(mob_pos.translate_y(offset_y)) {
-                Contains::DoesContain => mob_pos = mob_pos.translate_y(offset_y),
-                Contains::DoesNotContain => mob_pos = wrap(&mob_pos, &window_bounds, &Point { x : 0, y : offset_y})
+                Contains::DoesContain => mob_pos.y = mob_pos.translate_y(offset_y).y,
+                Contains::DoesNotContain => wrap(mob_pos, &window_bounds, &Point { x : 0, y : offset_y})
             }
         }
 
