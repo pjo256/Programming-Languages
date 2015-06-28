@@ -144,8 +144,8 @@ fn render(root: &mut Root, objs: &Vec<Box<Update>>) {
     root.flush();
 }
 
-fn update(objs: &mut Vec<Box<Update>>, keypress: KeyState, game: &mut Game) {
-    for obj in objs.iter_mut() {  
+fn update(objs: &mut Vec<Box<Update + 'static>>, keypress: KeyState, game: &mut Game) {
+    for obj in objs.iter_mut() {
         obj.update(keypress, game);
     }
 }
@@ -165,6 +165,10 @@ fn wrap(p : &mut Point, window_bounds : &Bounds, offset : &Point) {
 }
 
 fn main() { 
+    //let mut what = objects;
+    //what.push(Box::new(Character::new(40i32, 25i32, '@')) as Box<Update>);
+    //what.push(Box::new(NPC::new(10i32, 10i32, '%')) as Box<Update>);
+    
     let window_bounds : Bounds = Bounds { min : Point { x: 0, y: 0}, max : Point { x: 80, y : 50 } };
     let mut root = Root::initializer()
         .size(window_bounds.max.x, window_bounds.max.y)
@@ -173,16 +177,17 @@ fn main() {
         .init();
 
     let mut game : Game = Game { exit : false, window_bounds : window_bounds };
-    let pc = Box::new(Character::new(40i32, 25i32, '@')) as Box<Update>;
-    let mob = Box::new(NPC::new(10i32, 10i32, '%')) as Box<Update>;
-    let mut objs: Vec<Box<Update>> = vec![pc, mob];
     
+    let mut pc = Box::new(Character::new(40i32, 25i32, '@')) as Box<Update>;
+    let mut mob = Box::new(NPC::new(10i32, 10i32, '%')) as Box<Update>;
+    let mut objects : Vec<Box<Update>> = vec![pc, mob];
+ 
 
-    render(&mut root, &objs);
+    render(&mut root, &objects);
     while !(root.window_closed() || game.exit) {
         let keypress = root.wait_for_keypress(true);
-        update(&mut objs, keypress, &mut game);
-        render(&mut root, &objs);
+        update(&mut objects, keypress, &mut game);
+        render(&mut root, &objects);
     } 
 }
 
