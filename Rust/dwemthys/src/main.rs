@@ -164,11 +164,7 @@ fn wrap(p : &mut Point, window_bounds : &Bounds, offset : &Point) {
     }
 }
 
-fn main() { 
-    //let mut what = objects;
-    //what.push(Box::new(Character::new(40i32, 25i32, '@')) as Box<Update>);
-    //what.push(Box::new(NPC::new(10i32, 10i32, '%')) as Box<Update>);
-    
+fn main() {     
     let window_bounds : Bounds = Bounds { min : Point { x: 0, y: 0}, max : Point { x: 80, y : 50 } };
     let mut root = Root::initializer()
         .size(window_bounds.max.x, window_bounds.max.y)
