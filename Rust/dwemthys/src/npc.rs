@@ -25,7 +25,6 @@ impl Update for NPC {
     fn update(&mut self, keypress: KeyState, game: &mut Game) {
         let mut rng = rand::thread_rng();
         let offset_x = (rng.gen_range(-1.0, 1.0) - 1.0) as i32;
-        print!("{}", offset_x);
         match game.window_bounds.contains(self.position.translate_x(offset_x)) {
             Contains::DoesContain => self.position = self.position.translate_x(offset_x),
             Contains::DoesNotContain => update::wrap(&mut self.position, &game.window_bounds, &Point { x : offset_x, y : 0})
