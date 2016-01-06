@@ -1,0 +1,8 @@
+[package]
+name = "advent_code"
+version = "0.1.0"
+authors = ["Philip Ottesen <pjo256@nyu.edu>"]
+
+[dependencies]
+unicode-segmentation = "0.1.2"
+
